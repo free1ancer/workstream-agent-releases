@@ -36,18 +36,23 @@ curl -fsSL https://github.com/free1ancer/workstream-agent-releases/releases/late
 
 1. From the
    [latest release](https://github.com/free1ancer/workstream-agent-releases/releases/latest),
-   download `workstream-agent_<version>_darwin-aarch64.app.tar.gz`.
-2. Unpack it and drag **Workstream Agent.app** to `/Applications`.
-3. Clear the download flag, or macOS will refuse to open it:
+   download `workstream-agent_<version>_darwin-aarch64.dmg`.
+2. Open it and drag **Workstream Agent.app** to `/Applications`.
 
-   ```sh
-   xattr -dr com.apple.quarantine "/Applications/Workstream Agent.app"
-   ```
+That is the whole procedure. The app is signed with an Apple Developer ID
+certificate, notarized by Apple and stapled, so it opens on a double-click:
+there is no quarantine flag to clear, no right-click-Open, and no "damaged"
+dialog. If you ever see one, something is wrong with the download — check it
+rather than working around it:
 
-Step 3 is needed because the app is not yet signed with an Apple Developer ID
-certificate. Gatekeeper reports an unsigned downloaded app as "damaged", which
-is misleading — nothing is wrong with the file, and its minisign signature can
-be checked independently:
+```sh
+spctl --assess -vv "/Applications/Workstream Agent.app"
+```
+
+should say `source=Notarized Developer ID`.
+
+You can also verify the update payload independently of Apple, the way the
+agent's own updater does:
 
 ```sh
 minisign -Vm workstream-agent_<version>_darwin-aarch64.app.tar.gz \
@@ -55,13 +60,28 @@ minisign -Vm workstream-agent_<version>_darwin-aarch64.app.tar.gz \
   -P <the public key from the agent's tauri.conf.json>
 ```
 
-This step disappears once the certificate lands.
+### 1.0.3: re-grant once
+
+1.0.3 is the first signed release, and macOS keys privacy grants and keychain
+items to an app's signature. Upgrading from an unsigned build therefore looks
+like a different app to the system exactly once:
+
+- **Screen Recording** has to be granted again — the agent notices and walks you
+  through it. If Workstream is still listed in System Settings from the old
+  build, remove it with the **−** button and add it back.
+- You may be **asked to sign in again**, because the stored token belonged to
+  the old signature.
+
+Both are one-time. From 1.0.3 onwards the signature is stable, so grants and
+sign-in survive every update.
 
 ## Windows
 
 Download and run `workstream-agent_<version>_windows-x86_64.msi` from the
 [latest release](https://github.com/free1ancer/workstream-agent-releases/releases/latest).
 The MSI is not yet Authenticode-signed, so SmartScreen will warn on first run.
+(The macOS build is signed and notarized; the Windows certificate has not landed
+yet.)
 
 ## Intel Macs
 
@@ -77,4 +97,5 @@ the agent enrols itself on first launch, and the first-run wizard never appears.
 
 The agent lives in the menu bar. First launch walks through screen access and
 sign-in; after that, clicking the icon shows the day at a glance. It updates
-itself silently in the background — there is nothing to re-download here.
+itself silently in the background — there is nothing to re-download here, and
+updates keep your Screen Recording grant.
