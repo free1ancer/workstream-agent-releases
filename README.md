@@ -79,9 +79,25 @@ sign-in survive every update.
 
 Download and run `workstream-agent_<version>_windows-x86_64.msi` from the
 [latest release](https://github.com/free1ancer/workstream-agent-releases/releases/latest).
-The MSI is not yet Authenticode-signed, so SmartScreen will warn on first run.
-(The macOS build is signed and notarized; the Windows certificate has not landed
-yet.)
+
+Signed releases name the publisher: no "Unknown publisher", and Properties →
+Digital Signatures shows the signer and a timestamp. Windows may still show a
+SmartScreen warning for a while — click **More info → Run anyway**. That is
+reputation, not a problem with the download: SmartScreen trusts a signing
+certificate more as more people install it, and ours is new. It fades.
+
+Releases tagged before the certificate landed are unsigned and do show "Unknown
+publisher"; same gesture.
+
+To check a download yourself:
+
+```powershell
+Get-AuthenticodeSignature 'workstream-agent_<version>_windows-x86_64.msi' |
+  Format-List Status, SignerCertificate
+```
+
+`Valid` means the file is intact and from us. Anything else — don't install it,
+and tell us which release it was.
 
 ## Intel Macs
 
